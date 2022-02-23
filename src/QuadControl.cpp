@@ -69,15 +69,23 @@ VehicleCommand QuadControl::GenerateMotorCommands(float collThrustCmd, V3F momen
   // You'll need the arm length parameter L, and the drag/thrust ratio kappa
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
+     
+    collThrustCmd = mass * 9.81f;
+  //float len = L / (2.f * sqrtf(2.f));
+    float len = L / sqrtf(2.f);
+    float p_bar = momentCmd.x / len; // x axis
+    float q_bar = momentCmd.y / len; // y axis 
+    float r_bar = momentCmd.z / kappa; // z axis
+    float c_bar = collThrustCmd;
 
-  cmd.desiredThrustsN[0] = mass * 9.81f / 4.f; // front left
-  cmd.desiredThrustsN[1] = mass * 9.81f / 4.f; // front right
-  cmd.desiredThrustsN[2] = mass * 9.81f / 4.f; // rear left
-  cmd.desiredThrustsN[3] = mass * 9.81f / 4.f; // rear right
+    cmd.desiredThrustsN[0] = 0.25 * (c_bar + p_bar + q_bar - r_bar); // front left
+    cmd.desiredThrustsN[1] = 0.25 * (c_bar - p_bar + q_bar + r_bar); // front right
+    cmd.desiredThrustsN[2] = 0.25 * (c_bar + p_bar - q_bar + r_bar); // rear left
+    cmd.desiredThrustsN[3] = 0.25 * (c_bar - p_bar - q_bar - r_bar); // rear right
 
-  /////////////////////////////// END STUDENT CODE ////////////////////////////
+    /////////////////////////////// END STUDENT CODE ////////////////////////////
 
-  return cmd;
+    return cmd;
 }
 
 V3F QuadControl::BodyRateControl(V3F pqrCmd, V3F pqr)
@@ -97,8 +105,16 @@ V3F QuadControl::BodyRateControl(V3F pqrCmd, V3F pqr)
   V3F momentCmd;
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
+  /*V3F pqr_commanded = kpPQR * (pqrCmd - pqr);
+  momentCmd.x = Ixx * pqr_commanded.x;
+  momentCmd.y = Iyy * pqr_commanded.y;
+  momentCmd.z = Izz * pqr_commanded.z;*/
 
-  
+  V3F pqr_error = pqrCmd - pqr;
+
+  V3F I = V3F(Ixx, Iyy, Izz);
+
+  momentCmd = kpPQR * (I * pqr_error);
 
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
@@ -128,8 +144,43 @@ V3F QuadControl::RollPitchControl(V3F accelCmd, Quaternion<float> attitude, floa
   Mat3x3F R = attitude.RotationMatrix_IwrtB();
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
+  if (collThrustCmd > 0) {
+      V3F pqrCmd;
+      float c_d = -(collThrustCmd / mass);
+      float x = accelCmd.x / c_d;
+      float y = accelCmd.y / c_d;
+      float p_cmd = (1 / R(2, 2)) * (R(1, 0) * kpBank * (x - R(0, 2)) - R(0, 0) * kpBank * (x - R(0, 2)));
+      float q_cmd = (1 / R(2, 2)) * (R(1, 1) * kpBank * (x - R(1, 2)) - R(0, 1) * kpBank * (x - R(1, 2)));
+      pqrCmd.x = p_cmd;
+      pqrCmd.y = q_cmd;
+      pqrCmd.z = 0.f;
 
+      //float c_d = -collThrustCmd / mass;
 
+      //float x = accelCmd.x / c_d;
+      //float y = accelCmd.y / c_d;
+
+      //float bx = R(0, 2);
+      //float by = R(1, 2);
+
+      //float bxc_dot = kpBank * (bx - x);
+      //float byc_dot = kpBank * (by - y);
+
+      ////float p_cmd = (1 / R(2, 2)) * (R(1, 0) * kpBank * (x - R(0, 2)) - R(0, 0) * kpBank * (x - R(0, 2)));
+      ////float q_cmd = (1 / R(2, 2)) * (R(1, 1) * kpBank * (x - R(1, 2)) - R(0, 1) * kpBank * (x - R(1, 2)));
+
+      //float p_cmd = (1 / R(2, 2)) * (R(1, 0) * bxc_dot - R(0, 0) * byc_dot);
+      //float q_cmd = (1 / R(2, 2)) * (R(1, 1) * bxc_dot - R(0, 1) * byc_dot);
+
+      //pqrCmd.x = p_cmd;
+      //pqrCmd.y = q_cmd;
+      //pqrCmd.z = 0.f;
+  }
+  else {
+      pqrCmd.x = 0.f;
+      pqrCmd.y = 0.f;
+      pqrCmd.z = 0.f;
+  }
 
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
