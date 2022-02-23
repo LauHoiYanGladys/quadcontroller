@@ -145,43 +145,28 @@ V3F QuadControl::RollPitchControl(V3F accelCmd, Quaternion<float> attitude, floa
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
   if (collThrustCmd > 0) {
-      V3F pqrCmd;
-      float c_d = -(collThrustCmd / mass);
-      float x = accelCmd.x / c_d;
-      float y = accelCmd.y / c_d;
-      float p_cmd = (1 / R(2, 2)) * (R(1, 0) * kpBank * (x - R(0, 2)) - R(0, 0) * kpBank * (x - R(0, 2)));
-      float q_cmd = (1 / R(2, 2)) * (R(1, 1) * kpBank * (x - R(1, 2)) - R(0, 1) * kpBank * (x - R(1, 2)));
+      float c_d = -collThrustCmd / mass;
+
+      float x = CONSTRAIN(accelCmd.x / c_d, -sin(maxTiltAngle), sin(maxTiltAngle));
+      float y = CONSTRAIN(accelCmd.y / c_d, -sin(maxTiltAngle), sin(maxTiltAngle));
+
+      float bx = R(0, 2);
+      float by = R(1, 2);
+
+      float bxc_dot = kpBank * (x - bx);
+      float byc_dot = kpBank * (y - by);
+
+      float p_cmd = (1 / R(2, 2)) * (R(1, 0) * bxc_dot - R(0, 0) * byc_dot);
+      float q_cmd = (1 / R(2, 2)) * (R(1, 1) * bxc_dot - R(0, 1) * byc_dot);
+
       pqrCmd.x = p_cmd;
       pqrCmd.y = q_cmd;
-      pqrCmd.z = 0.f;
-
-      //float c_d = -collThrustCmd / mass;
-
-      //float x = accelCmd.x / c_d;
-      //float y = accelCmd.y / c_d;
-
-      //float bx = R(0, 2);
-      //float by = R(1, 2);
-
-      //float bxc_dot = kpBank * (bx - x);
-      //float byc_dot = kpBank * (by - y);
-
-      ////float p_cmd = (1 / R(2, 2)) * (R(1, 0) * kpBank * (x - R(0, 2)) - R(0, 0) * kpBank * (x - R(0, 2)));
-      ////float q_cmd = (1 / R(2, 2)) * (R(1, 1) * kpBank * (x - R(1, 2)) - R(0, 1) * kpBank * (x - R(1, 2)));
-
-      //float p_cmd = (1 / R(2, 2)) * (R(1, 0) * bxc_dot - R(0, 0) * byc_dot);
-      //float q_cmd = (1 / R(2, 2)) * (R(1, 1) * bxc_dot - R(0, 1) * byc_dot);
-
-      //pqrCmd.x = p_cmd;
-      //pqrCmd.y = q_cmd;
-      //pqrCmd.z = 0.f;
   }
   else {
       pqrCmd.x = 0.f;
       pqrCmd.y = 0.f;
-      pqrCmd.z = 0.f;
   }
-
+  pqrCmd.z = 0.f;
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
   return pqrCmd;
