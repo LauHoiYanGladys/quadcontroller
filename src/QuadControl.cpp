@@ -70,8 +70,6 @@ VehicleCommand QuadControl::GenerateMotorCommands(float collThrustCmd, V3F momen
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
      
-    collThrustCmd = mass * 9.81f;
-  //float len = L / (2.f * sqrtf(2.f));
     float len = L / sqrtf(2.f);
     float p_bar = momentCmd.x / len; // x axis
     float q_bar = momentCmd.y / len; // y axis 
