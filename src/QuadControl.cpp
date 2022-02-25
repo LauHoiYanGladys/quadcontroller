@@ -197,7 +197,22 @@ float QuadControl::AltitudeControl(float posZCmd, float velZCmd, float posZ, flo
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
 
+  float zDotErr = velZCmd - velZ;
+  float vel_cmd = kpVelZ * zDotErr;
+  float d_term = CONSTRAIN(vel_cmd , -maxAscentRate, maxDescentRate);
 
+  float zErr = posZCmd - posZ;
+  float p_term = kpPosZ * zErr;
+
+  integratedAltitudeError += zErr * dt;
+  float i_term = KiPosZ * integratedAltitudeError;
+
+  // PID controller
+  float accelCmd = accelZCmd + p_term + d_term + i_term;
+
+  // how can we limit the acceleration in the real world - we should rather limit speeds and adapt the thrust
+  // accordingly. but how?
+  thrust = -CONSTRAIN((accelCmd - CONST_GRAVITY) / R(2, 2), -maxAscentRate / dt, maxDescentRate / dt) * mass;
 
   /////////////////////////////// END STUDENT CODE ////////////////////////////
   
@@ -235,6 +250,32 @@ V3F QuadControl::LateralPositionControl(V3F posCmd, V3F velCmd, V3F pos, V3F vel
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
 
+  // assign the gain
+  V3F kpPos;
+  kpPos.x = kpPosXY;
+  kpPos.y = kpPosXY;
+  kpPos.z = 0.f;
+  V3F kpVel;
+  kpVel.x = kpVelXY;
+  kpVel.y = kpVelXY;
+  kpVel.z = 0.f;
+
+  // constrain the commanded velocity
+  V3F cappedVelCmd;
+  if (velCmd.mag() > maxSpeedXY) {
+      cappedVelCmd = velCmd.norm() * maxSpeedXY;
+  }
+  else {
+      cappedVelCmd = velCmd;
+  }
+  V3F posErr = posCmd - pos;
+  V3F velErr = cappedVelCmd - vel;
+  accelCmd = kpPosZ * posErr + kpVelZ * velErr + accelCmd;
+
+  // constrain the commanded acceleration
+  if (accelCmd.mag() > maxAccelXY) {
+      accelCmd = accelCmd.norm() * maxAccelXY;
+  }
   
 
   /////////////////////////////// END STUDENT CODE ////////////////////////////
