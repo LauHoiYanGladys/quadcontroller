@@ -196,8 +196,7 @@ float QuadControl::AltitudeControl(float posZCmd, float velZCmd, float posZ, flo
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
 
   float zDotErr = velZCmd - velZ;
-  float vel_cmd = kpVelZ * zDotErr;
-  float d_term = CONSTRAIN(vel_cmd , -maxAscentRate, maxDescentRate);
+  float d_term = kpVelZ * zDotErr + velZ;
 
   float zErr = posZCmd - posZ;
   float p_term = kpPosZ * zErr;
